@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+<title>ESPRESSO - Eksplorasi Spasial Persebaran Usaha dan Online Shop</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:'Poppins',sans-serif;
+    background:#f8f5f1;
+    overflow:hidden;
+    color:#4b382a;
+}
+
+/* SPLASH */
+
+#splash{
+    position:fixed;
+    inset:0;
+    background:linear-gradient(135deg,#f6e7d8,#ead2b7);
+    z-index:99999;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    transition:1s;
+}
+
+.logo-circle{
+    width:110px;
+    height:110px;
+    border-radius:50%;
+    background:#8b5e3c;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:white;
+    font-size:48px;
+    box-shadow:0 10px 30px rgba(0,0,0,.2);
+    animation:float 2s ease-in-out infinite;
+}
+
+@keyframes float{
+    0%{transform:translateY(0px);}
+    50%{transform:translateY(-10px);}
+    100%{transform:translateY(0px);}
+}
+
+#splash h1{
+    margin-top:20px;
+    font-size:38px;
+    letter-spacing:2px;
+    color:#6f4e37;
+}
+
+#splash p{
+    margin-top:10px;
+    font-size:14px;
+    opacity:.8;
+}
+
+.loader{
+    margin-top:25px;
+    width:180px;
+    height:6px;
+    background:#e0c7ab;
+    border-radius:20px;
+    overflow:hidden;
+}
+
+.loader span{
+    display:block;
+    width:40%;
+    height:100%;
+    background:#8b5e3c;
+    border-radius:20px;
+    animation:loading 1.2s infinite;
+}
+
+@keyframes loading{
+    0%{margin-left:-40%;}
+    100%{margin-left:100%;}
+}
+
+/* APP */
+
+#app{
+    display:none;
+    height:100vh;
+    width:100%;
+}
+
+.sidebar{
+    width:360px;
+    background:#fffaf5;
+    height:100%;
+    overflow-y:auto;
+    border-right:1px solid #eadfd2;
+    box-shadow:2px 0 10px rgba(0,0,0,.05);
+    z-index:1000;
+}
+
+.sidebar-header{
+    padding:24px;
+    background:linear-gradient(135deg,#8b5e3c,#b87b4b);
+    color:white;
+}
+
+.sidebar-header h2{
+    font-size:28px;
+    font-weight:700;
+}
+
+.sidebar-header p{
+    margin-top:6px;
+    font-size:13px;
+    opacity:.9;
+}
+
+.filter-box{
+    padding:20px;
+}
+
+.filter-box input,
+.filter-box select{
+    width:100%;
+    padding:12px 14px;
+    margin-bottom:12px;
+    border:none;
+    border-radius:14px;
+    background:#f3ece6;
+    font-size:14px;
+    outline:none;
+}
+
+.stats{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    padding:0 20px 20px;
+}
+
+.card{
+    background:white;
+    border-radius:18px;
+    padding:18px;
+    box-shadow:0 4px 15px rgba(0,0,0,.05);
+}
+
+.card h3{
+    font-size:13px;
+    opacity:.7;
+}
+
+.card p{
+    font-size:26px;
+    margin-top:8px;
+    font-weight:700;
+    color:#8b5e3c;
+}
+
+.list-container{
+    padding:0 20px 20px;
+}
+
+.merchant-card{
+    background:white;
+    border-radius:16px;
+    padding:16px;
+    margin-bottom:14px;
+    box-shadow:0 4px 12px rgba(0,0,0,.05);
+    transition:.3s;
+    cursor:pointer;
+}
+
+.merchant-card:hover{
+    transform:translateY(-3px);
+}
+
+.merchant-card h4{
+    font-size:15px;
+    margin-bottom:6px;
+    color:#5a3f2e;
+}
+
+.badge{
+    display:inline-block;
+    padding:4px 10px;
+    background:#f2dfcf;
+    color:#8b5e3c;
+    border-radius:20px;
+    font-size:11px;
+    margin-top:8px;
+}
+
+.map-container{
+    flex:1;
+    position:relative;
+}
+
+#map{
+    width:100%;
+    height:100%;
+}
+
+.topbar{
+    position:absolute;
+    top:18px;
+    left:18px;
+    z-index:999;
+    background:white;
+    padding:12px 18px;
+    border-radius:16px;
+    box-shadow:0 5px 20px rgba(0,0,0,.12);
+}
+
+.topbar h3{
+    font-size:16px;
+    color:#6f4e37;
+}
+
+.leaflet-popup-content-wrapper{
+    border-radius:18px;
+}
+
+.popup-title{
+    font-weight:700;
+    color:#6f4e37;
+    margin-bottom:6px;
+}
+
+.popup-detail{
+    font-size:13px;
+    margin-bottom:4px;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- SPLASH -->
+
+<div id="splash">
+    <div class="logo-circle">☕</div>
+    <h1>ESPRESSO</h1>
+    <p>Eksplorasi Spasial Persebaran Usaha dan Online Shop</p>
+
+    <div class="loader">
+        <span></span>
+    </div>
+</div>
+
+<!-- APP -->
+
+<div id="app">
+
+    <div class="sidebar">
+
+        <div class="sidebar-header">
+            <h2>ESPRESSO</h2>
+            <p>Visualisasi Geotag Merchant Online</p>
+        </div>
+
+        <div class="filter-box">
+
+            <input type="text" id="searchInput" placeholder="Cari merchant...">
+
+            <select id="categoryFilter">
+                <option value="">Semua Kategori</option>
+            </select>
+
+            <select id="kecamatanFilter">
+                <option value="">Semua Kecamatan</option>
+            </select>
+
+        </div>
+
+        <div class="stats">
+            <div class="card">
+                <h3>Total Merchant</h3>
+                <p id="totalMerchant">0</p>
+            </div>
+
+            <div class="card">
+                <h3>Total Kecamatan</h3>
+                <p id="totalKec">0</p>
+            </div>
+        </div>
+
+        <div class="list-container" id="merchantList"></div>
+
+    </div>
+
+    <div class="map-container">
+
+        <div class="topbar">
+            <h3>☕ ESPRESSO Mapping Dashboard</h3>
+        </div>
+
+        <div id="map"></div>
+
+    </div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
+
+<script>
+
+// SPLASH
+
+setTimeout(() => {
+
+    document.getElementById('splash').style.opacity = 0;
+
+    setTimeout(() => {
+
+        document.getElementById('splash').style.display = 'none';
+        document.getElementById('app').style.display = 'flex';
+
+    }, 1000);
+
+}, 2200);
+
+
+// MAP INIT
+
+const map = L.map('map').setView([-0.0263,109.3425], 12);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'© OpenStreetMap'
+}).addTo(map);
+
+
+// DATA SOURCE
+
+const SHEET_ID = '1Dl0vLTb6jeDDmpSg1kLUzMLmxz_XI-4JxW3rNcmThWU';
+
+const SHEET_NAME = 'grabgojek';
+
+const sheetURL =
+`https://opensheet.elk.sh/${SHEET_ID}/${SHEET_NAME}`;
+
+const geojsonURL =
+'https://raw.githubusercontent.com/yoviewibowo/repowilkerstat6171/main/final_subsls_6171_2025-1.geojson';
+
+
+// VARIABLE
+
+let merchantData = [];
+let geojsonData;
+let markers = [];
+
+
+// LOAD DATA
+
+async function loadData(){
+
+    try{
+
+        const [sheetRes, geoRes] = await Promise.all([
+            fetch(sheetURL),
+            fetch(geojsonURL)
+        ]);
+
+        merchantData = await sheetRes.json();
+
+        geojsonData = await geoRes.json();
+
+        console.log('Merchant Loaded:', merchantData.length);
+
+        console.log('GeoJSON Loaded:', geojsonData.features.length);
+
+        renderGeojson();
+
+        processMerchant();
+
+        populateFilters();
+
+        renderList(merchantData);
+
+        updateStats();
+
+    }catch(err){
+
+        console.error(err);
+
+        alert('Gagal memuat data.');
+
+    }
+
+}
+
+
+// RENDER GEOJSON
+
+function renderGeojson(){
+
+    L.geoJSON(geojsonData,{
+
+        style:{
+            color:'#8b5e3c',
+            weight:1,
+            fillColor:'#d9b38c',
+            fillOpacity:0.15
+        }
+
+    }).addTo(map);
+
+}
+
+
+// PROCESS MERCHANT
+
+function processMerchant(){
+
+    merchantData.forEach(item => {
+
+        const lat = parseFloat(item.latitude);
+
+        const lng = parseFloat(item.longitude);
+
+        if(isNaN(lat) || isNaN(lng)) return;
+
+        const point = turf.point([lng,lat]);
+
+        let foundSLS = '-';
+
+
+        // DETECT SLS
+
+        for(const feature of geojsonData.features){
+
+            if(turf.booleanPointInPolygon(point, feature)){
+
+                foundSLS =
+                    feature.properties.nmsls ||
+                    feature.properties.nmsubsls ||
+                    '-';
+
+                break;
+
+            }
+
+        }
+
+        item.sls = foundSLS;
+
+
+        // MARKER
+
+        const marker = L.circleMarker([lat,lng],{
+
+            radius:7,
+            fillColor:'#8b5e3c',
+            color:'#ffffff',
+            weight:1,
+            fillOpacity:0.9
+
+        }).addTo(map);
+
+
+        // POPUP
+
+        marker.bindPopup(`
+
+            <div class="popup-title">
+                ${item.restaurant_name}
+            </div>
+
+            <div class="popup-detail">
+                <b>Platform:</b> ${item.platform}
+            </div>
+
+            <div class="popup-detail">
+                <b>Rating:</b> ${item.rating || '-'}
+            </div>
+
+            <div class="popup-detail">
+                <b>Kategori:</b> ${item.category || '-'}
+            </div>
+
+            <div class="popup-detail">
+                <b>Kecamatan:</b> ${item.nmkec || '-'}
+            </div>
+
+            <div class="popup-detail">
+                <b>SLS:</b> ${item.sls}
+            </div>
+
+            <div class="popup-detail">
+                <b>Alamat:</b> ${item.address || '-'}
+            </div>
+
+        `);
+
+        item.marker = marker;
+
+        markers.push(marker);
+
+    });
+
+}
+
+
+// FILTER OPTION
+
+function populateFilters(){
+
+    const categories = [
+        ...new Set(
+            merchantData.map(x => x.category).filter(Boolean)
+        )
+    ];
+
+    const kecamatan = [
+        ...new Set(
+            merchantData.map(x => x.nmkec).filter(Boolean)
+        )
+    ];
+
+    const categoryFilter =
+        document.getElementById('categoryFilter');
+
+    const kecamatanFilter =
+        document.getElementById('kecamatanFilter');
+
+
+    categories.forEach(cat => {
+
+        categoryFilter.innerHTML +=
+            `<option value="${cat}">${cat}</option>`;
+
+    });
+
+
+    kecamatan.forEach(kec => {
+
+        kecamatanFilter.innerHTML +=
+            `<option value="${kec}">${kec}</option>`;
+
+    });
+
+}
+
+
+// RENDER LIST
+
+function renderList(data){
+
+    const container =
+        document.getElementById('merchantList');
+
+    container.innerHTML = '';
+
+    data.forEach(item => {
+
+        const card = document.createElement('div');
+
+        card.className = 'merchant-card';
+
+        card.innerHTML = `
+
+            <h4>${item.restaurant_name}</h4>
+
+            <div style="font-size:13px;margin-bottom:6px;">
+                ⭐ ${item.rating || '-'}
+            </div>
+
+            <div style="font-size:12px;">
+                ${item.nmkec || '-'}
+            </div>
+
+            <div class="badge">
+                ${item.category || 'UMKM'}
+            </div>
+
+        `;
+
+
+        card.onclick = () => {
+
+            map.setView([
+                parseFloat(item.latitude),
+                parseFloat(item.longitude)
+            ],17);
+
+            item.marker.openPopup();
+
+        };
+
+        container.appendChild(card);
+
+    });
+
+}
+
+
+// UPDATE STATS
+
+function updateStats(){
+
+    document.getElementById('totalMerchant')
+        .innerText = merchantData.length;
+
+    const kec = [
+        ...new Set(
+            merchantData.map(x => x.nmkec)
+        )
+    ];
+
+    document.getElementById('totalKec')
+        .innerText = kec.length;
+
+}
+
+
+// APPLY FILTER
+
+function applyFilter(){
+
+    const search =
+        document.getElementById('searchInput')
+        .value.toLowerCase();
+
+    const category =
+        document.getElementById('categoryFilter')
+        .value;
+
+    const kec =
+        document.getElementById('kecamatanFilter')
+        .value;
+
+
+    const filtered = merchantData.filter(item => {
+
+        return (
+
+            item.restaurant_name
+                .toLowerCase()
+                .includes(search)
+
+            &&
+
+            (category === '' ||
+             item.category === category)
+
+            &&
+
+            (kec === '' ||
+             item.nmkec === kec)
+
+        );
+
+    });
+
+
+    markers.forEach(marker => {
+
+        map.removeLayer(marker);
+
+    });
+
+
+    filtered.forEach(item => {
+
+        item.marker.addTo(map);
+
+    });
+
+
+    renderList(filtered);
+
+}
+
+
+// EVENT
+
+document.getElementById('searchInput')
+.addEventListener('input', applyFilter);
+
+document.getElementById('categoryFilter')
+.addEventListener('change', applyFilter);
+
+document.getElementById('kecamatanFilter')
+.addEventListener('change', applyFilter);
+
+
+// START
+
+loadData();
+
+</script>
+
+</body>
+</html>
